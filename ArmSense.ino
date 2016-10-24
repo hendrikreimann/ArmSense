@@ -86,10 +86,12 @@ int SENSOR_SIGN[9] = { 1,1,1,1,1,1,1,1,1};  //Correct directions x,y,z - gyros, 
 #define PRINT_SENSOR_DATA_RAW   0  //Will print the raw uncorrected Sensor Data
 #define PRINT_DCM               0  //Will print the whole direction cosine matrix
 #define PRINT_INCLINATION       1  //Will print the whole direction cosine matrix
-#define SENSOR_COLOR            0  // 1 == RED or 0 == WHITE sesnor
+#define SENSOR_COLOR            1  // 1 == RED or 0 == WHITE sensor
 int ProvideFeedback =           0;
-float threshold =              1.04; 
- float gamma =                 .99;
+float threshold =              120;
+float gamma =                 .99;
+float alpha =                 3;
+
 ////////////////////////////////////////////////////////
 
 //#define PRINT_GPS 0     //Will print GPS data
@@ -120,7 +122,6 @@ float AN_OFFSET[9] = {0,0,0,0,0,0,0,0,0}; //Array that stores the Offset of the 
 //Structure for holding offsets and calibration values for the accel, gyro, and magnetom
 struct s_sensor_offsets
 {
-    
     float accel_offset[3];
     float accel_scale[3];
     float gyro_offset[3];
@@ -129,7 +130,6 @@ struct s_sensor_offsets
     float magnetom_XY_Scale;
     float magnetom_YZ_Theta;
     float magnetom_YZ_Scale;
-    
 };
 
 
@@ -188,6 +188,8 @@ float errorYaw[3]= {0,0,0};
   float vertical_sensor_from_gyro[3];
   float vertical_sensor[3];
   float vertical_sensor_dot[3]; 
+  float vertical_sensor_dot_from_gyro[3]; 
+  float vertical_sensor_dot_from_accel[3]; 
 
   // angles
   float inclination_angle;
@@ -268,7 +270,7 @@ void setup()
 void loop() //Main Loop  
 {
 
-  if((DIYmillis()-timer)>=50)  // Main loop runs at 50Hz
+  if((DIYmillis()-timer)>=20)  // Main loop runs at 50Hz
   {
         Compass_counter++;
         Baro_counter++;
@@ -304,54 +306,54 @@ void loop() //Main Loop
         //=======================  Calculations for DCM Algorithm  ========================//
         Matrix_update(); 
 //        // Normalize();
-        Drift_correction();
-        Euler_angles();
+//        Drift_correction();
+//        Euler_angles();
         Inclination_angles();
        
         //=================================================================================//
         //============================= Data Display/User Code ============================//
         // Make sure you don't take too long here!
-      if (Serial.available() >= 1)
+
+        // serial communication to the device
+        if (Serial.available() >= 1)
         {
           if (Serial.read() == '#')
           {
-          int command = Serial.read();
-           if (command == 'Y')
-           {
-            ProvideFeedback = 1;
+            int command = Serial.read();
+            if (command == 'Y')
+            {
+              ProvideFeedback = 1;
             }
             else if (command == 'N')
-           {
-            ProvideFeedback = 0;  
-            MotorStatus = 0;
+            {
+              ProvideFeedback = 0;  
+              MotorStatus = 0;
             }
+            else if (command == 'T')
+            {
+              threshold = Serial.parseFloat();
+            } 
+            else if (command == 'A')
+            {
+              alpha = Serial.parseFloat();
+            } 
           }
         }
-        
-    if (ProvideFeedback == 1)   
-    {    
-      if (inclination_angle > threshold)
-      {       
-        MotorStatus = 1;
-      }
-      else
-      { 
-         MotorStatus = 0; 
-      }   
-    }     
 
-   if (MotorStatus)
-       {
-         digitalWrite(MotorPin,HIGH);
-       }
-   else
-       {
-         digitalWrite(MotorPin,LOW);
-       }
+        // update motor status
+        if ((ProvideFeedback == 1) && (inclination_angle > threshold))
+        {
+          MotorStatus = 1;
+          digitalWrite(MotorPin,HIGH);
+        }
+        else
+        {
+            MotorStatus = 0; 
+            digitalWrite(MotorPin,LOW);
+        }
        
-//Serial.flush();
-printdata();
-StatusLEDToggle();
+    printdata();
+    StatusLEDToggle();
   }
 }
 
