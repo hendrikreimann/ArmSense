@@ -86,30 +86,30 @@ void printdata(void)
       #endif
 
       #if PRINT_INCLINATION==1
-//        Serial.print(inclination_angle);
-//        Serial.print(", ");
-//        Serial.print(ProvideFeedback);
-//        Serial.print(", ");
-//        Serial.print(MotorStatus);
-//        Serial.print(", ");
-//        Serial.print(inclination_angle_from_accel);
-//        Serial.print(", ");
-//        Serial.print(threshold);
-//        Serial.print(", ");
-//        Serial.print(alpha);
+        Serial.print(inclination_angle);
+        Serial.print(", ");
+        Serial.print(ProvideFeedback);
+        Serial.print(", ");
+        Serial.print(MotorStatus);
+        Serial.print(", ");
+        Serial.print(inclination_angle_from_accel);
+        Serial.print(", ");
+        Serial.print(threshold);
+        Serial.print(", ");
+        Serial.print(alpha);
 
         
-        Serial.print(sen_data.accel_x);
-        Serial.print (", ");
-        Serial.print(sen_data.accel_y);
-        Serial.print (", ");
-        Serial.print(sen_data.accel_z);
-        Serial.print(", ");
-        Serial.print(sen_data.gyro_x);
-        Serial.print(", ");
-        Serial.print(sen_data.gyro_y);
-        Serial.print(", ");
-        Serial.print(sen_data.gyro_z);
+//        Serial.print(sen_data.accel_x);
+//        Serial.print (", ");
+//        Serial.print(sen_data.accel_y);
+//        Serial.print (", ");
+//        Serial.print(sen_data.accel_z);
+//        Serial.print(", ");
+//        Serial.print(sen_data.gyro_x);
+//        Serial.print(", ");
+//        Serial.print(sen_data.gyro_y);
+//        Serial.print(", ");
+//        Serial.print(sen_data.gyro_z);
 
 
         

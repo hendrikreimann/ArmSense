@@ -86,9 +86,9 @@ int SENSOR_SIGN[9] = { 1,1,1,1,1,1,1,1,1};  //Correct directions x,y,z - gyros, 
 #define PRINT_SENSOR_DATA_RAW   0  //Will print the raw uncorrected Sensor Data
 #define PRINT_DCM               0  //Will print the whole direction cosine matrix
 #define PRINT_INCLINATION       1  //Will print the whole direction cosine matrix
-#define SENSOR_COLOR            1  // 1 == RED or 0 == WHITE sensor
-int ProvideFeedback =           0;
-float threshold =              120;
+#define SENSOR_COLOR            0  // 1 == RED or 0 == WHITE sensor
+int ProvideFeedback =           1;
+float threshold =              80;
 float gamma =                 .99;
 float alpha =                 3;
 
