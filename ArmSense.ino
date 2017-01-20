@@ -45,7 +45,7 @@
 */
 
 #include <HMC58X3.h>
-#include <EEPROM.h>
+#include <avr/EEPROM.h>
 #include <Wire.h>
 #include <Math.h>
 
@@ -75,34 +75,39 @@ int SENSOR_SIGN[9] = { 1,1,1,1,1,1,1,1,1};  //Correct directions x,y,z - gyros, 
 #define Kp_YAW 1.2
 #define Ki_YAW 0.000008
 
+
+
+
 //========================================
 // Output Data Configuration
 // Turn on/off the different data outputs
 // For the Mongoose Visualization Software to work, the first 3 need to be turned on
 
+
+//EEPROM storage addresses
+float* addr; // addr   =  sen_offset.accel_offset[0]    
+             // addr+1 = sen_offset.accel_offset[1]    
+             // addr+2 = sen_offset.accel_offset[2]      
+             // addr+3 = sen_offset.accel_scale[0]   
+             // addr+4 = sen_offset.accel_scale[1]    
+             // addr+5 = sen_offset.accel_scale[2]     
+             // addr+6 = sen_offset.gyro_offset[0]     
+             // addr+7 = sen_offset.gyro_offset[1]      
+             // addr+8 = sen_offset.gyro_offset[2]      
+
 ////////////////// MENU/////////////////////////////////
-#define PRINT_EULER             0  //Will print the Euler angles Roll, Pitch and Yaw
-#define PRINT_SENSOR_DATA       0  //Will print the Corrected Sensor Data
-#define PRINT_SENSOR_DATA_RAW   0  //Will print the raw uncorrected Sensor Data
-#define PRINT_DCM               0  //Will print the whole direction cosine matrix
-#define PRINT_INCLINATION       1  //Will print the whole direction cosine matrix
-#define SENSOR_COLOR            0  // 1 == RED or 0 == WHITE sensor
-int ProvideFeedback =           1;
+//#define SENSOR_COLOR            1  // 1 == RED or 0 == WHITE sensor
+
+int ProvideFeedback =           0;
 float threshold =              80;
-float gamma =                 .99;
-float alpha =                 3;
+float gamma =                  .99;
+float alpha =                  3;
+//#define outputMode              0
+int outputMode = 0;
 
 ////////////////////////////////////////////////////////
 
-//#define PRINT_GPS 0     //Will print GPS data
-//#define PRINT_BINARY 0  //Will print binary message and suppress ASCII messages (above)
-
-
 #define STATUS_LED 4  //PD4 on the Atmega328. Red LED
-
-//EEPROM storage addesses
-#define Start_SensorOffsets    0        //offset data at start of EEPROM
-#define Size_SensorOffsets     36       //the offset data is 12 bytes long 
 
 float G_Dt=0.02;    // Integration time (DCM algorithm)  We will run the integration loop at 50Hz if possible
 
@@ -214,7 +219,6 @@ float Temporary_Matrix[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
 void setup()
 {
   Serial.begin(57600);
-//  Serial.begin(115200);
   pinMode (STATUS_LED,OUTPUT);  // Status LED
   pinMode (MotorPin,OUTPUT);
   Serial.println();
@@ -289,31 +293,16 @@ void loop() //Main Loop
         //======================= Read the Gyro and Accelerometer =======================//
         Read_Gyro();      // Read the data from the I2C Gyro
         Read_Accel();     // Read I2C accelerometer
-      
-        //=============================== Read the Compass ===============================//
-//        Compass_counter=0;
-//        Read_Compass();    // Read I2C magnetometer     
-                
-        //=============================== Read the GPS data ==============================//
-//        if (GPS_counter > 50)  // Read GPS data at 1Hz... (50 loop runs)
-//        {
-//          GPS_counter=0;
-//         
-//          //this is were it would go...  
-//        }
+     
          
         //=================================================================================//
         //=======================  Calculations for DCM Algorithm  ========================//
         Matrix_update(); 
-//        // Normalize();
-//        Drift_correction();
-//        Euler_angles();
         Inclination_angles();
        
         //=================================================================================//
         //============================= Data Display/User Code ============================//
         // Make sure you don't take too long here!
-
         // serial communication to the device
         if (Serial.available() >= 1)
         {
@@ -326,7 +315,7 @@ void loop() //Main Loop
             }
             else if (command == 'N')
             {
-              ProvideFeedback = 0;  
+              ProvideFeedback = 0; 
               MotorStatus = 0;
             }
             else if (command == 'T')
@@ -336,7 +325,43 @@ void loop() //Main Loop
             else if (command == 'A')
             {
               alpha = Serial.parseFloat();
+            }
+            else if (command == 'I')
+            {
+              //#define outputMode  0
+              outputMode = 0;
             } 
+            else if (command == 'R')
+            {
+              //#define outputMode  1
+              outputMode = 1;
+            }
+            else if (command == 'C')
+            {
+             // #define outputMode  2
+              outputMode = 2;
+            }
+            else if (command == 'U')
+            { 
+              sen_offset.accel_offset[0] = Serial.parseFloat(); 
+              eeprom_update_float(addr,sen_offset.accel_offset[0]);
+              sen_offset.accel_offset[1] = Serial.parseFloat();  
+              eeprom_update_float(addr+1,sen_offset.accel_offset[1]); 
+              sen_offset.accel_offset[2] = Serial.parseFloat();  
+              eeprom_update_float(addr+2,sen_offset.accel_offset[2]);   
+              sen_offset.accel_scale[0]  = Serial.parseFloat();
+              eeprom_update_float(addr+3,sen_offset.accel_scale[0]);
+              sen_offset.accel_scale[1] = Serial.parseFloat();  
+              eeprom_update_float(addr+4,sen_offset.accel_scale[1]);
+              sen_offset.accel_scale[2] = Serial.parseFloat();   
+              eeprom_update_float(addr+5,sen_offset.accel_scale[2]); 
+              sen_offset.gyro_offset[0] = Serial.parseFloat();    
+              eeprom_update_float(addr+6,sen_offset.gyro_offset[0]);
+              sen_offset.gyro_offset[1] = Serial.parseFloat();    
+              eeprom_update_float(addr+7,sen_offset.gyro_offset[1]);
+              sen_offset.gyro_offset[2] = Serial.parseFloat();
+              eeprom_update_float(addr+8,sen_offset.gyro_offset[2]);
+            }
           }
         }
 
@@ -348,8 +373,8 @@ void loop() //Main Loop
         }
         else
         {
-            MotorStatus = 0; 
-            digitalWrite(MotorPin,LOW);
+          MotorStatus = 0; 
+          digitalWrite(MotorPin,LOW);
         }
        
     printdata();
